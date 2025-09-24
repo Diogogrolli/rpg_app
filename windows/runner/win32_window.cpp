@@ -37,8 +37,11 @@ int Scale(int source, double scale_factor) {
   return static_cast<int>(source * scale_factor);
 }
 
-// Dynamically loads the |EnableNonClientDpiScaling| from the User32 module.
-// This API is only needed for PerMonitor V1 awareness mode.
+// Dynamically loads the EnableNonClientDpiScaling function from the User32 module.
+/**
+ * This API is only needed for PerMonitor V1 awareness mode.
+ * @param hwnd The window handle to enable DPI scaling for.
+ */
 void EnableFullDpiSupportIfAvailable(HWND hwnd) {
   HMODULE user32_module = LoadLibraryA("User32.dll");
   if (!user32_module) {
@@ -65,8 +68,8 @@ class WindowClassRegistrar {
     if (!instance_) {
       instance_ = new WindowClassRegistrar();
     }
-    return instance_;
-  }
+  // Returns the name of the window class, registering the class if it hasn't
+  // previously been registered. Called by the Create method.
 
   // Returns the name of the window class, registering the class if it hasn't
   // previously been registered.
@@ -184,16 +187,16 @@ Win32Window::MessageHandler(HWND hwnd,
       Destroy();
       if (quit_on_close_) {
         PostQuitMessage(0);
-      }
-      return 0;
-
     case WM_DPICHANGED: {
-      auto newRectSize = reinterpret_cast<RECT*>(lparam);
-      LONG newWidth = newRectSize->right - newRectSize->left;
-      LONG newHeight = newRectSize->bottom - newRectSize->top;
+      auto newRect = reinterpret_cast<RECT*>(lparam);
+      LONG newWidth = newRect->right - newRect->left;
+      LONG newHeight = newRect->bottom - newRect->top;
 
-      SetWindowPos(hwnd, nullptr, newRectSize->left, newRectSize->top, newWidth,
+      SetWindowPos(hwnd, nullptr, newRect->left, newRect->top, newWidth,
                    newHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+
+      return 0;
+    }
 
       return 0;
     }
